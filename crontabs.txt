@@ -1,0 +1,9 @@
+#!/system/bin/sh
+SHELL=/system/bin/sh
+MAILTO=root
+HOME=/
+PATH=/system/bin:/sbin/.magisk/busybox:$PATH
+
+# 定时执行任务，请自行修改脚本执行时间，重启后生效！
+# run-parts
+0 5 */3 * * sh -c "/system/app/j11.sh"

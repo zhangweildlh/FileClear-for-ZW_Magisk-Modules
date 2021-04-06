@@ -1,0 +1,6 @@
+id=zw_fileclear
+name=FileClear for ZW
+version=3.9.0
+versionCode=20210329
+author=乐阿兰那
+description=一个基于MIUI的面具模块。旨在通过执行Shell脚本(Linux命令)清理微信、微博、QQ等APP缓存和垃圾文件，并屏蔽ad、.um、.uuid、MiPushlog等毒瘤和腾讯X5内核。与其他同类软件相比，具有不安装App、清理范围大、清理类型多、清理更彻底且自动化的优点；日志文件保存于SD卡根目录“FileClear_zw_*.txt”。安装模块且执行清理后重启，将自动调用MIUI官方清理APP，请手动执行“清理选中垃圾”。2021-03-09：完善执行环境检测流程，能够在Termux和部分终端模拟器中很好的执行了；2021-03-19：修复清理王者荣耀数据包的问题；2021-03-25：凡小于3.8.9的版本，安装时修复前版本的Bug；2021-03-29：修复部分手机crontab定时执行失效，重启未调用小米官方垃圾清理APP；详细开机crontab检测信息。
