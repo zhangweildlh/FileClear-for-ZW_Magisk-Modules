@@ -2,8 +2,9 @@
 SHELL=/system/bin/sh
 MAILTO=root
 HOME=/
-PATH=/system/bin:/sbin/.magisk/busybox:$PATH
+magisk_path=$(magisk --path)/.magisk
+PATH=/system/bin:$magisk_path/busybox:$PATH
 
-# 定时执行任务，请自行修改脚本执行时间，重启后生效！
+# 定时执行任务，请自行修改脚本执行时间，重启后生效
 # run-parts
-0 5 */3 * * sh -c "/system/app/j11.sh"
+0 5 */3 * * su -c "sh /system/app/j11.sh"

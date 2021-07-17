@@ -30,6 +30,25 @@ then
   rm -rf $sd/FileClear_zw_$nowtime.txt &>/dev/null
   touch $sd/FileClear_zw_$nowtime.txt
   echo "   ****** 检测到FileClear_for_ZW正在Magisk面具中执行 ******" >$sd/FileClear_zw_$nowtime.txt
+  if test ! -e "/data/adb/service.d/call_miuicleanmaster-for-zw_fileclear.sh";then
+    touch /data/adb/service.d/call_miuicleanmaster-for-zw_fileclear.sh
+  else
+    echo -e "   上次执行本模块后未能成功重启，请手动重启！！\n   重启后模块会在预设时间(一般为每三天的凌晨5点)执行清理。\n   3秒后退出...">>$sd/FileClear_zw_$nowtime.txt
+    sleep 3s
+    exit 1
+  fi
+elif test "$module_22" = "1"
+then
+  if test ! -e "/data/adb/service.d/call_miuicleanmaster-for-zw_fileclear.sh";then
+  touch /data/adb/service.d/call_miuicleanmaster-for-zw_fileclear.sh
+  else
+    echo -e "   上次执行本脚本后未能成功重启，请手动重启后再执行！\n   3秒后退出..."
+    sleep 3s
+    exit 1
+  fi
+fi
+if test "$module_21" = "1"
+then
   find_1=1
   find_2="/system/bin/find"
   awk_2="/system/bin/gawk"
@@ -78,7 +97,7 @@ else
   SELinux_on=2
   echo "   SELinux原始状态:Off"
 fi
-mount|grep "ro,"|grep -v "/sbin/.magisk/"|$awk_2 -F'[ ,]' '{print $1,$3}'|while read a b
+mount|grep "ro,"|grep -v "$(magisk --path)/.magisk/"|awk -F'[ ,]' '{print $1,$3}'|while read a b
 do
 mount -o rw,remount $a $b &>/dev/null
 [[ $? == "0" ]] && echo -e "\033[32m   挂载$b为可写成功 \033[0m" || echo -e "\033[31m   挂载$b为可写失败 \033[0m"
@@ -97,21 +116,31 @@ do
   /system/bin/am force-stop $killapp_3;
 done;
 /system/bin/am kill-all;} &
+fstrim_2="$(magisk --path)/.magisk/busybox/fstrim"
+echo "   第1次回收文件系统未使用的空间ing..."
+$fstrim_2 -v / &>/dev/null
+/system/bin/ls -l / |grep ^d|$awk_2 '{print $8}'|$xargs_2 -I fstrim_temp $fstrim_2 -v /fstrim_temp &>/dev/null
+wait
+sm fstrim 2>/dev/null
+echo -e "   APP关闭完成！空间回收完毕！\n   开始缓存和内存清理ing..."
+sync
+echo 3 > /proc/sys/vm/drop_caches
+echo 1 > /proc/sys/vm/compact_memory
+sync
+echo "   缓存和内存清理完毕 ！"
 start_used_allsys=`df /apex /cache /cust /data /dev /metadata /mnt /sys /system /vendor 2>/dev/null|$awk_2 'NR!=1 {used+=$3}END{used=used/1024;print used}' 2>/dev/null`
 start_used_data=`du -smL /data/ 2>/dev/null|$awk_2 '{print $1}' 2>/dev/null`
 start_used_sd=`du -smL $sd/ 2>/dev/null|$awk_2 '{print $1}' 2>/dev/null`
 start_used_sdandro=`du -smL $sd/Android/ 2>/dev/null|$awk_2 '{print $1}' 2>/dev/null`
 wait
 starttime=`date +%s`
-echo 3 > /proc/sys/vm/drop_caches
-echo "   缓存和内存清理完毕 ！"
 
 cat >$sd/adzw.txt <<-eof
 360
 139light
 ..ccdid
 ..ccvid
-.[0-9][0-9][0-9]*
+.[0-9][0-9a-z]*
 ._android.dat
 ._driver.dat
 ._system.dat
@@ -130,6 +159,7 @@ cat >$sd/adzw.txt <<-eof
 .imei.txt
 .mn_[0-9][0-9]*
 .omgid
+.oukdtft
 .turing.dat
 .ufs
 [0-9]
@@ -242,11 +272,11 @@ MIUI/.wallpaper_history
 MIUI/Gallery/cloud/.microthumbnailFile
 MIUI/Gallery/cloud/.trashBin
 MIUI/Gallery/cloud/thumbnaifile
-mob
-monitor
-mq
-msc
-msf
+[Mm]ob
+[Mm]onitor
+[Mm]q
+[Mm]sc
+[Mm]sf
 mtdownload
 MT2
 MToolkit
@@ -272,12 +302,12 @@ qiyi
 qmt
 QQChess
 qqstory
-qtaudioengine
+[Qq][Tt][Aa]udio[Ee]ngine
 ramfs_ext
-rcs
+[Rr]cs
 recovery
 routeguidance
-sam
+[Ss]am
 sdghookapi.dat
 setup
 shumei.txt
@@ -299,24 +329,37 @@ Telegram/Telegram Images
 Telegram/Telegram Video
 Telegram/Telegram Audio
 Telegram/Telegram Documents
+[Tt]encent/.emotionsm
+[Tt]encent/.font_info
+[Tt]encent/.gift
+[Tt]encent/.hiboom_font
+[Tt]encent/.trooprm/enter_effects
+[Tt]encent/.pendant
+[Tt]encent/.profilecard
+[Tt]encent/.sticker_recommended_pics
+[Tt]encent/.vaspoke
+[Tt]encent/.vipicon
 [Tt]encent/beacon
 [Tt]encent/blob
 [Tt]encent/com
-[Tt]encent/MicroMsg/[0-9a-zA-Z][0-9a-zA-Z][0-9a-z]*/bizimg
-[Tt]encent/MicroMsg/[0-9a-zA-Z][0-9a-zA-Z][0-9a-z]*/favoffline
-[Tt]encent/MicroMsg/[0-9a-zA-Z][0-9a-zA-Z][0-9a-z]*/favorite
-[Tt]encent/MicroMsg/[0-9a-zA-Z][0-9a-zA-Z][0-9a-z]*/image
-[Tt]encent/MicroMsg/[0-9a-zA-Z][0-9a-zA-Z][0-9a-z]*/image2
-[Tt]encent/MicroMsg/[0-9a-zA-Z][0-9a-zA-Z][0-9a-z]*/oneday
-[Tt]encent/MicroMsg/[0-9a-zA-Z][0-9a-zA-Z][0-9a-z]*/recbiz
-[Tt]encent/MicroMsg/[0-9a-zA-Z][0-9a-zA-Z][0-9a-z]*/video
-[Tt]encent/MicroMsg/[0-9a-zA-Z][0-9a-zA-Z][0-9a-z]*/video2
+[Tt]encent/DoutuRes
+[Tt]encent/funcall
+[Tt]encent/mini
+[Tt]encent/MicroMsg/[0-9a-z]*/bizimg
+[Tt]encent/MicroMsg/[0-9a-z]*/favoffline
+[Tt]encent/MicroMsg/[0-9a-z]*/favorite
+[Tt]encent/MicroMsg/[0-9a-z]*/image
+[Tt]encent/MicroMsg/[0-9a-z]*/image2
+[Tt]encent/MicroMsg/[0-9a-z]*/oneday
+[Tt]encent/MicroMsg/[0-9a-z]*/recbiz
+[Tt]encent/MicroMsg/[0-9a-z]*/video
+[Tt]encent/MicroMsg/[0-9a-z]*/video2
 [Tt]encent/MicroMsg/bigfile
 [Tt]encent/MicroMsg/CheckResUpdate
 [Tt]encent/MicroMsg/sns_ad_landingpages
 [Tt]encent/MicroMsg/vusericon
 [Tt]encent/MicroMsg/wallet_images
-[Tt]encent/MicroMsg/wxafiles/[a-z][a-z][a-z0-9]*
+[Tt]encent/MicroMsg/wxafiles/[a-z][a-z][0-9a-z]*
 [Tt]encent/mini
 [Tt]encent/MobileQQ
 [Tt]encent/MobileQQ/.apollo/rsc_jsonconfig/100_1_all_room3d
@@ -367,14 +410,19 @@ Telegram/Telegram Documents
 [Tt]encent/MobileQQ/information_paster
 [Tt]encent/MobileQQ/keyword_emotion
 [Tt]encent/MobileQQ/listentogether
+[Tt]encent/MobileQQ/lottie
 [Tt]encent/MobileQQ/ocr
+[Tt]encent/MobileQQ/pddata
 [Tt]encent/MobileQQ/photo
 [Tt]encent/MobileQQ/play_show_apng
 [Tt]encent/MobileQQ/portrait
 [Tt]encent/MobileQQ/ppt
 [Tt]encent/MobileQQ/pubaccount
+[Tt]encent/MobileQQ/qav
 [Tt]encent/MobileQQ/qbiz
 [Tt]encent/MobileQQ/qbosssplahad
+[Tt]encent/MobileQQ/QQ_Images
+[Tt]encent/MobileQQ/QQEditPic
 [Tt]encent/MobileQQ/qqcomic
 [Tt]encent/MobileQQ/qqconnect
 [Tt]encent/MobileQQ/qqmusic
@@ -390,12 +438,15 @@ Telegram/Telegram Documents
 [Tt]encent/MobileQQ/[Tt]encent/Mobileqq/webso
 [Tt]encent/MobileQQ/thumb
 [Tt]encent/MobileQQ/thumb2
+[Tt]encent/MobileQQ/vas
 [Tt]encent/MobileQQ/video_story
 [Tt]encent/MobileQQ/viola
 [Tt]encent/MobileQQ/voicechange
 [Tt]encent/MobileQQ/webviewcheck
 [Tt]encent/MobileQQ/zhitu
 [Tt]encent/mta
+[Tt]encent/newpoke
+[Tt]encent/poke
 [Tt]encent/QQ_cameraemo
 [Tt]encent/QQ_collection/pic
 [Tt]encent/QQ_favorite
@@ -409,8 +460,9 @@ Telegram/Telegram Documents
 [Tt]encent/QQLite/early
 [Tt]encent/qzone
 [Tt]encent/readerzone
+[Tt]encent/TMAssistantSDK
 [Tt]encent/vs
-[Tt]encent/WeiXin/[0-9a-zA-Z][0-9a-zA-Z][0-9a-z]*/image2
+[Tt]encent/WeiXin/[0-9a-z]*/image2
 [Tt]encent/WeiXin/bigfile
 [Tt]encent/WeiXin/sns_ad_landingpages
 [Tt]encent/wtlogin
@@ -451,11 +503,12 @@ cat >$sd/adzw.txt <<-eof
 .dxData.db
 .m5s
 cmb.pb/files/cmb830/marketingpath/file/mppic
-cn.kuwo.player/files/Kuwomusic/.localhtml
-cn.kuwo.player/files/Kuwomusic/.pendant
-cn.kuwo.player/files/Kuwomusic/.videoUpload
-cn.kuwo.player/files/Kuwomusic/picture
-cn.kuwo.player/files/Kuwomusic/screenad
+cn.kuwo.player/files/[Kk]uwo[Mm]usic/.localhtml
+cn.kuwo.player/files/[Kk]uwo[Mm]usic/.pendant
+cn.kuwo.player/files/[Kk]uwo[Mm]usic/.videoUpload
+cn.kuwo.player/files/[Kk]uwo[Mm]usic/custombootcover
+cn.kuwo.player/files/[Kk]uwo[Mm]usic/picture
+cn.kuwo.player/files/[Kk]uwo[Mm]usic/screenad
 com.amap.android.ams/files/amaplocation/flp
 com.android.browser/files/data/banners
 com.android.camera
@@ -520,19 +573,21 @@ com.tencent.mm/com
 com.tencent.mm/files/data
 com.tencent.mm/files
 com.tencent.mm/MicroMsg/.tmp
-com.tencent.mm/MicroMsg/[0-9a-zA-Z][0-9a-zA-Z][0-9a-z]*/attachment
-com.tencent.mm/MicroMsg/[0-9a-zA-Z][0-9a-zA-Z][0-9a-z]*/bizimg
-com.tencent.mm/MicroMsg/[0-9a-zA-Z][0-9a-zA-Z][0-9a-z]*/emoji
-com.tencent.mm/MicroMsg/[0-9a-zA-Z][0-9a-zA-Z][0-9a-z]*/favoffline
-com.tencent.mm/MicroMsg/[0-9a-zA-Z][0-9a-zA-Z][0-9a-z]*/favorite
-com.tencent.mm/MicroMsg/[0-9a-zA-Z][0-9a-zA-Z][0-9a-z]*/image
-com.tencent.mm/MicroMsg/[0-9a-zA-Z][0-9a-zA-Z][0-9a-z]*/image2
-com.tencent.mm/MicroMsg/[0-9a-zA-Z][0-9a-zA-Z][0-9a-z]*/mailapp
-com.tencent.mm/MicroMsg/[0-9a-zA-Z][0-9a-zA-Z][0-9a-z]*/openim
-com.tencent.mm/MicroMsg/[0-9a-zA-Z][0-9a-zA-Z][0-9a-z]*/recbiz
-com.tencent.mm/MicroMsg/[0-9a-zA-Z][0-9a-zA-Z][0-9a-z]*/record
-com.tencent.mm/MicroMsg/[0-9a-zA-Z][0-9a-zA-Z][0-9a-z]*/video
-com.tencent.mm/MicroMsg/[0-9a-zA-Z][0-9a-zA-Z][0-9a-z]*/video2
+com.tencent.mm/MicroMsg/[0-9a-z]*/attachment
+com.tencent.mm/MicroMsg/[0-9a-z]*/bizimg
+com.tencent.mm/MicroMsg/[0-9a-z]*/emoji
+com.tencent.mm/MicroMsg/[0-9a-z]*/favoffline
+com.tencent.mm/MicroMsg/[0-9a-z]*/favorite
+com.tencent.mm/MicroMsg/[0-9a-z]*/finder
+com.tencent.mm/MicroMsg/[0-9a-z]*/image
+com.tencent.mm/MicroMsg/[0-9a-z]*/image2
+com.tencent.mm/MicroMsg/[0-9a-z]*/mailapp
+com.tencent.mm/MicroMsg/[0-9a-z]*/music/cover/mv_default_video
+com.tencent.mm/MicroMsg/[0-9a-z]*/openim
+com.tencent.mm/MicroMsg/[0-9a-z]*/recbiz
+com.tencent.mm/MicroMsg/[0-9a-z]*/record
+com.tencent.mm/MicroMsg/[0-9a-z]*/video
+com.tencent.mm/MicroMsg/[0-9a-z]*/video2
 com.tencent.mm/MicroMsg/bigfile
 com.tencent.mm/MicroMsg/browser
 com.tencent.mm/MicroMsg/CDNTemp
@@ -558,24 +613,26 @@ com.tencent.mm/QQfile_recv
 com.tencent.mm/vs
 com.tencent.mobileqq/files/ae
 com.tencent.mobileqq/files/qwallet/.preloaduni
+com.tencent.mobileqq/qzone/imageV2
+com.tencent.mobileqq/qzlive
 com.tencent.mobileqq/[Tt]encent/beacon
 com.tencent.mobileqq/[Tt]encent/blob
 com.tencent.mobileqq/[Tt]encent/com
-com.tencent.mobileqq/[Tt]encent/MicroMsg/[0-9a-zA-Z][0-9a-zA-Z][0-9a-z]*/bizimg
-com.tencent.mobileqq/[Tt]encent/MicroMsg/[0-9a-zA-Z][0-9a-zA-Z][0-9a-z]*/favoffline
-com.tencent.mobileqq/[Tt]encent/MicroMsg/[0-9a-zA-Z][0-9a-zA-Z][0-9a-z]*/favorite
-com.tencent.mobileqq/[Tt]encent/MicroMsg/[0-9a-zA-Z][0-9a-zA-Z][0-9a-z]*/image
-com.tencent.mobileqq/[Tt]encent/MicroMsg/[0-9a-zA-Z][0-9a-zA-Z][0-9a-z]*/image2
-com.tencent.mobileqq/[Tt]encent/MicroMsg/[0-9a-zA-Z][0-9a-zA-Z][0-9a-z]*/oneday
-com.tencent.mobileqq/[Tt]encent/MicroMsg/[0-9a-zA-Z][0-9a-zA-Z][0-9a-z]*/recbiz
-com.tencent.mobileqq/[Tt]encent/MicroMsg/[0-9a-zA-Z][0-9a-zA-Z][0-9a-z]*/video
-com.tencent.mobileqq/[Tt]encent/MicroMsg/[0-9a-zA-Z][0-9a-zA-Z][0-9a-z]*/video2
+com.tencent.mobileqq/[Tt]encent/MicroMsg/[0-9a-z]*/bizimg
+com.tencent.mobileqq/[Tt]encent/MicroMsg/[0-9a-z]*/favoffline
+com.tencent.mobileqq/[Tt]encent/MicroMsg/[0-9a-z]*/favorite
+com.tencent.mobileqq/[Tt]encent/MicroMsg/[0-9a-z]*/image
+com.tencent.mobileqq/[Tt]encent/MicroMsg/[0-9a-z]*/image2
+com.tencent.mobileqq/[Tt]encent/MicroMsg/[0-9a-z]*/oneday
+com.tencent.mobileqq/[Tt]encent/MicroMsg/[0-9a-z]*/recbiz
+com.tencent.mobileqq/[Tt]encent/MicroMsg/[0-9a-z]*/video
+com.tencent.mobileqq/[Tt]encent/MicroMsg/[0-9a-z]*/video2
 com.tencent.mobileqq/[Tt]encent/MicroMsg/bigfile
 com.tencent.mobileqq/[Tt]encent/MicroMsg/CheckResUpdate
 com.tencent.mobileqq/[Tt]encent/MicroMsg/sns_ad_landingpages
 com.tencent.mobileqq/[Tt]encent/MicroMsg/vusericon
 com.tencent.mobileqq/[Tt]encent/MicroMsg/wallet_images
-com.tencent.mobileqq/[Tt]encent/MicroMsg/wxafiles/[a-z][a-z][a-z0-9]*
+com.tencent.mobileqq/[Tt]encent/MicroMsg/wxafiles/[a-z][a-z][0-9a-z]*
 com.tencent.mobileqq/[Tt]encent/mini
 com.tencent.mobileqq/[Tt]encent/MobileQQ/.apollo/rsc_jsonconfig
 com.tencent.mobileqq/[Tt]encent/MobileQQ/.corlornick
@@ -627,15 +684,19 @@ com.tencent.mobileqq/[Tt]encent/MobileQQ/information_paster
 com.tencent.mobileqq/[Tt]encent/MobileQQ/keyword_emotion
 com.tencent.mobileqq/[Tt]encent/MobileQQ/listentogether
 com.tencent.mobileqq/[Tt]encent/MobileQQ/ocr
+com.tencent.mobileqq/[Tt]encent/MobileQQ/pddata
 com.tencent.mobileqq/[Tt]encent/MobileQQ/photo
 com.tencent.mobileqq/[Tt]encent/MobileQQ/play_show_apng
 com.tencent.mobileqq/[Tt]encent/MobileQQ/portrait
 com.tencent.mobileqq/[Tt]encent/MobileQQ/ppt
 com.tencent.mobileqq/[Tt]encent/MobileQQ/pubaccount
+com.tencent.mobileqq/[Tt]encent/MobileQQ/qav
 com.tencent.mobileqq/[Tt]encent/MobileQQ/qbiz
 com.tencent.mobileqq/[Tt]encent/MobileQQ/qbosssplahad
+com.tencent.mobileqq/[Tt]encent/MobileQQ/QQ_Images
 com.tencent.mobileqq/[Tt]encent/MobileQQ/qqcomic
 com.tencent.mobileqq/[Tt]encent/MobileQQ/qqconnect
+com.tencent.mobileqq/[Tt]encent/MobileQQ/QQEditPic
 com.tencent.mobileqq/[Tt]encent/MobileQQ/qqmusic
 com.tencent.mobileqq/[Tt]encent/MobileQQ/qqstory
 com.tencent.mobileqq/[Tt]encent/MobileQQ/rijmmkv
@@ -665,7 +726,7 @@ com.tencent.mobileqq/[Tt]encent/QQLite/ArkApp
 com.tencent.mobileqq/[Tt]encent/qzone
 com.tencent.mobileqq/[Tt]encent/readerzone
 com.tencent.mobileqq/[Tt]encent/vs
-com.tencent.mobileqq/[Tt]encent/WeiXin/[0-9a-zA-Z][0-9a-zA-Z][0-9a-z]*/image2
+com.tencent.mobileqq/[Tt]encent/WeiXin/[0-9a-z]*/image2
 com.tencent.mobileqq/[Tt]encent/WeiXin/bigfile
 com.tencent.mobileqq/[Tt]encent/WeiXin/sns_ad_landingpages
 com.tencent.mobileqq/[Tt]encent/wtlogin
@@ -973,10 +1034,8 @@ com.ss.android.article.video/files/plugins
 com.ss.android.auto/files/awcn_strategy
 com.ss.android.essay.joke/files/update.apk
 com.ss.android.essay.joke/videoedit/beauty
-com.ss.android.ugc.aweme/files/awcn_strategy
-com.ss.android.ugc.aweme/files/crashlognative
-com.ss.android.ugc.aweme/files/draft
-com.ss.android.ugc.awemeplugin/cachetmpimages
+com.ss.android.ugc.aweme/files
+com.ss.android.ugc.aweme/plugin/cachetmpimages
 com.ss.android.ugc.awemf/files/npth/ProcessTrack
 com.ss.android.ugc.detail/cachetmpimages
 com.ss.android.ugc.live/bytedance
@@ -998,8 +1057,8 @@ com.taobao.taobao/files/atlas-debug
 com.taobao.taobao/files/awcn_strategy
 com.taobao.taobao/files/carrierdata
 com.taobao.taobao/files/chatphoto
-com.taobao.taobao/files/download/[0-9a-zA-Z][0-9a-zA-Z][0-9a-z]*
-com.taobao.taobao/files/download/-[0-9a-zA-Z][0-9a-zA-Z][0-9a-z]*
+com.taobao.taobao/files/download/[0-9a-z]*
+com.taobao.taobao/files/download/-[0-9a-z]*
 com.taobao.taobao/files/download/puti
 com.taobao.taobao/files/download/share_expression/small_man
 com.taobao.taobao/files/downloads
@@ -1083,11 +1142,19 @@ com.tencent.minihd.qq/qq
 com.tencent.minihd.qq/qzone
 com.tencent.minihd.qq/wblog_head
 com.tencent.mm/files/kvcomm/monitordata*
+com.tencent.mm/files/liteapp
+com.tencent.mm/files/public/box
 com.tencent.mm/files/public/CheckResUpdate
+com.tencent.mm/files/public/cityService
 com.tencent.mm/files/public/emoji/res
+com.tencent.mm/files/public/fts
+com.tencent.mm/files/public/live
+com.tencent.mm/files/public/ocr
+com.tencent.mm/files/public/tagsearch
+com.tencent.mm/files/public/websearch
 com.tencent.mm/files/wx[0-9]*/*.apk
-com.tencent.mm/MicroMsg/[a-z0-9][a-z0-9][a-z0-9]*/avatar
-com.tencent.mm/MicroMsg/[a-z0-9][a-z0-9][a-z0-9]*/image2
+com.tencent.mm/MicroMsg/[0-9a-z]*/avatar
+com.tencent.mm/MicroMsg/[0-9a-z]*/image2
 com.tencent.mobileqq/app_theme_810
 com.tencent.mobileqq/baodownload
 com.tencent.mobileqq/files/ArkApp
@@ -1170,7 +1237,7 @@ com.tencent.qqlite/app_installed_plugin
 com.tencent.qqlite/app_plugin_download
 com.tencent.qqlite/app_tombs
 com.tencent.qqlite/files/arkapp/install
-com.tencent.qqlite/files/mini/[0-9a-zA-Z][0-9a-zA-Z][0-9a-z]*
+com.tencent.qqlite/files/mini/[0-9a-z]*
 com.tencent.qqlive/files/.omgid/dirs
 com.tencent.qqlive/files/.startheme
 com.tencent.qqlive/files/.webapp
@@ -1311,6 +1378,7 @@ com.wifi.key/files/awcn_strategy
 com.wifi.key/files/pictures/splash
 com.xfplay.play/playlists
 com.xfplay.play/xfplay
+com.xiaomi.market/files/cmsVideo
 com.xiaomi.market/files/download/apks
 com.xiaomi.o2o/files/baichuan/log
 com.xiaomi.o2o/files/carrierdata
@@ -1438,17 +1506,17 @@ do
    then
    chattr -R -i "$sd/$adz0" 2>/dev/null
    chmod -R 777 "$sd/$adz0" 2>/dev/null
-   rm -rf "$sd/$adz0"
-   touch "$sd/$adz0"
-   chmod 000 "$sd/$adz0"
-   chattr +i "$sd/$adz0"
+   rm -rf "$sd/$adz0" 2>/dev/null
+   touch "$sd/$adz0" 2>/dev/null
+   chmod 000 "$sd/$adz0" 2>/dev/null
+   chattr +i "$sd/$adz0" 2>/dev/null
    adzw_ad_num=$(($adzw_ad_num+1))
    elif [[ -f $sd/$adz0 && -w $sd/$adz0 ]]
    then
-   rm -rf "$sd/$adz0"
-   touch "$sd/$adz0"
-   chmod 000 "$sd/$adz0"
-   chattr +i "$sd/$adz0"
+   rm -rf "$sd/$adz0" 2>/dev/null
+   touch "$sd/$adz0" 2>/dev/null
+   chmod 000 "$sd/$adz0" 2>/dev/null
+   chattr +i "$sd/$adz0" 2>/dev/null
    adzw_ad_num=$(($adzw_ad_num+1))
    fi
 done
@@ -1456,7 +1524,7 @@ wait
 rm -f $sd/adzw.txt
 unset adz0
 
-find /data \( -iname "ad" -o -iname "AdHub" -o -iname "ads" -o -iname "*_ad" -o -iname "*_ads" -o -iname "*_ad_*" -o -iname "ad_*" -o -iname "ads_*" -o -iname "brandad" -o -iname "miad" -o -iname "MiPushLog" -o -iname "msflogs" -o -iname "startupsplash" -o -iname "splash" -o -iname "tbslog" -o -iname ".u" -o -iname ".um" -o -iname ".uuid" -o -iname ".uxx" -o -iname ".vy" -o -iname ".yyy" -o -iname ".zzz" -o -iname "um" -o -iname "uuid" -o -iname "uxx" \) 2>/dev/null|sed -e '/.so/ d' -e '/.sh/ d' -e '/.db/ d' -e '/.xml/ d' -e '/.crc/ d' -e '/com.tencent.tmgp.sgame/ d' -e '/com.tencent.mm\/MicroMsg/ d' >>$sd/adzw_ad.txt
+find /data \( -iname "ad" -o -iname "AdHub" -o -iname "ads" -o -iname "*_ad" -o -iname "*_ads" -o -iname "*_ad_*" -o -iname "ad_*" -o -iname "ads_*" -o -iname "brandad" -o -iname "miad" -o -iname "MiPushLog" -o -iname "msflogs" -o -iname "startupsplash" -o -iname "splash" -o -iname "spla*ad" -o -iname "tbslog" -o -iname ".u" -o -iname ".um" -o -iname ".uuid" -o -iname ".uxx" -o -iname ".vy" -o -iname ".yyy" -o -iname ".zzz" -o -iname "um" -o -iname "uuid" -o -iname "uxx" \) 2>/dev/null|sed -e '/.so/ d' -e '/.sh/ d' -e '/.db/ d' -e '/.xml/ d' -e '/.crc/ d' -e '/com.tencent.tmgp.sgame/ d' -e '/com.tencent.mm\/MicroMsg/ d' >>$sd/adzw_ad.txt
 
 x5tbs_num=0
 for x5tbs_1 in `find /data -type d -iname "*Tencent*" 2>/dev/null|sed -e '/com.tencent.tmgp.sgame/ d'`
@@ -1479,7 +1547,8 @@ unset x5tbs_num
 echo -e "\033[1m—————————————————————————————————————————\033[0m"
 
 echo "   开始从根目录起搜索文件夹，稍等..."
-{ find / \( -path /sys -o -path /proc \) -prune -o -type d \( -iname "*_log" -o\
+{ find / \( -path /sys -o -path /proc \) -prune -o -type d \( -iname "*.test" -o\
+ -iname "*_log" -o\
  -iname "*_logs" -o\
  -iname "*_report" -o\
  -iname "*_temp" -o\
@@ -1491,22 +1560,23 @@ echo "   开始从根目录起搜索文件夹，稍等..."
  -iname "*microthumbnailfile" -o\
  -iname "*-temp" -o\
  -iname "*-tmp" -o\
- -iname ".log" -o\
  -iname ".*_thumbnail" -o\
+ -iname ".log" -o\
  -iname ".td-3" -o\
  -iname ".tdck" -o\
- -iname "*.test" -o\
+ -iname ".temp" -o\
  -iname ".thumbnail" -o\
  -iname ".thumbnails" -o\
- -iname ".temp" -o\
  -iname ".tmfs" -o\
  -iname ".tmp" -o\
  -iname "album*" -o\
  -iname "baidu" -o\
  -iname "bugreports" -o\
+ -iname "code_cache" -o\
  -iname "crashdata" -o\
  -iname "dcsdk" -o\
  -iname "debug" -o\
+ -iname "debug_log" -o\
  -iname "log" -o\
  -iname "logs" -o\
  -iname "MiPushLog" -o\
@@ -1515,7 +1585,8 @@ echo "   开始从根目录起搜索文件夹，稍等..."
  -iname "temp" -o\
  -iname "thumb*" -o\
  -iname "tmp" -o\
- -iname "tombstones" \) 2>/dev/null|sed -e '/\/sys/ d' -e '/\/proc/ d' -e '/\/com.tencent.tmgp.sgame/ d' -e '/.auth_cache/ d' -e '/yttrium_code_cache/ d' >>$sd/adzw_1.txt;
+ -iname "tombstones" -o\
+ -iname "xlog" \) 2>/dev/null|sed -e '/\/sys/ d' -e '/\/proc/ d' -e '/\/com.tencent.tmgp.sgame/ d' -e '/.auth_cache/ d' -e '/yttrium_code_cache/ d' >>$sd/adzw_1.txt;
 $awk_2 -v FS='\n' -v ORS='\0' '{print $0}' $sd/adzw_1.txt|$xargs_2 -0 -P 80 -I deldir_1 sh -c "rm -rf \"deldir_1\" 2>>$sd/adzw_1_err.txt";
 sleep 3s;
 $awk_2 -v FS='\n' -v ORS='\0' '{print $0}' $sd/adzw_1.txt|$xargs_2 -0 -P 80 -I deldir_1 sh -c "rm -r \"deldir_1\" 2>/dev/null";} &
@@ -1529,11 +1600,13 @@ echo "   开始在data中搜索文件夹，稍等..."
  -iname "*log" -o\
  -iname "*log-*" -o\
  -iname "*log_*" -o\
+ -iname "*logging_*" -o\
  -iname "*logic" -o\
  -iname "*logs" -o\
  -iname "*logs-*" -o\
  -iname "*logs_*" -o\
  -iname "*push" -o\
+ -iname "*splash" -o\
  -iname "*temp" -o\
  -iname "*tmp" -o\
  -iname "*tmps" -o\
@@ -1589,7 +1662,6 @@ echo "   开始在data中搜索文件夹，稍等..."
  -iname ".fg" -o\
  -iname ".freshword" -o\
  -iname ".fssingerres" -o\
- -iname "FTS_BizCacheObj" -o\
  -iname ".gift" -o\
  -iname ".hcdnlivenet.ini" -o\
  -iname ".hiidosdk" -o\
@@ -1605,7 +1677,6 @@ echo "   开始在data中搜索文件夹，稍等..."
  -iname ".jars" -o\
  -iname ".jdd" -o\
  -iname ".jds" -o\
- -iname "krsdk" -o\
  -iname ".kspdf" -o\
  -iname ".kugouid" -o\
  -iname ".lm_device" -o\
@@ -1645,10 +1716,10 @@ echo "   开始在data中搜索文件夹，稍等..."
  -iname ".qqchess" -o\
  -iname ".record" -o\
  -iname ".recordsample" -o\
- -iname "rs-" -o\
  -iname ".sandbox" -o\
  -iname ".search" -o\
  -iname ".shared" -o\
+ -iname ".shareTemp" -o\
  -iname ".shop" -o\
  -iname ".shop_assit" -o\
  -iname ".signaturetemplate" -o\
@@ -1656,7 +1727,6 @@ echo "   开始在data中搜索文件夹，稍等..."
  -iname ".smartbiz" -o\
  -iname ".snggame" -o\
  -iname ".snggamemsg" -o\
- -iname ".splash" -o\
  -iname ".ssjjsy" -o\
  -iname ".statistic" -o\
  -iname ".statuses" -o\
@@ -1682,6 +1752,7 @@ echo "   开始在data中搜索文件夹，稍等..."
  -iname ".turingdebug" -o\
  -iname ".txlauncher" -o\
  -iname ".ufs" -o\
+ -iname ".umeng" -o\
  -iname ".update" -o\
  -iname ".upgrade" -o\
  -iname ".userreturn" -o\
@@ -1718,6 +1789,7 @@ echo "   开始在data中搜索文件夹，稍等..."
  -iname "action" -o\
  -iname "activity" -o\
  -iname "activity_banner" -o\
+ -iname "adcache" -o\
  -iname "addrmgr" -o\
  -iname "adesk_livewallaper" -o\
  -iname "adsapp" -o\
@@ -1737,6 +1809,8 @@ echo "   开始在data中搜索文件夹，稍等..."
  -iname "app_tbs_common_share" -o\
  -iname "app_webview" -o\
  -iname "app_x5webview" -o\
+ -iname "app_xwalk_*" -o\
+ -iname "app_xwalkplugin" -o\
  -iname "appicon" -o\
  -iname "appsearch" -o\
  -iname "appseller" -o\
@@ -1801,16 +1875,22 @@ echo "   开始在data中搜索文件夹，稍等..."
  -iname "dump" -o\
  -iname "easou_book" -o\
  -iname "eup" -o\
+ -iname "FTS_BizCacheObj" -o\
  -iname "handler" -o\
  -iname "jsmcc" -o\
+ -iname "krsdk" -o\
  -iname "Local Storage" -o\
+ -iname "logo*" -o\
  -iname "minidump" -o\
  -iname "newsimage" -o\
  -iname "online.*" -o\
  -iname "pending" -o\
  -iname "pushsdk" -o\
+ -iname "rs-" -o\
  -iname "Session Storage" -o\
  -iname "sns" -o\
+ -iname "spla*ad" -o\
+ -iname "spla*cache" -o\
  -iname "ssjjsy" -o\
  -iname "statistic" -o\
  -iname "storage" -o\
@@ -1830,14 +1910,16 @@ echo "   开始在data中搜索文件夹，稍等..."
  -iname "watchdog" -o\
  -iname "webview_tmpl" -o\
  -iname "welcome" -o\
+ -iname "wlan_logs" -o\
  -iname "wxafiles" -o\
  -iname "wxanewfiles" -o\
+ -iname "xinhao" -o\
  -iname "xlogtest_writable" \) 2>/dev/null|sed -e '/\/com.tencent.tmgp.sgame/ d' -e '/app_clock_bak/ d' -e '/.auth_cache/ d' -e '/yttrium_code_cache/ d' >>$sd/adzw_2.txt;
 $awk_2 -v FS='\n' -v ORS='\0' '{print $0}' $sd/adzw_2.txt|$xargs_2 -0 -P 80 -I deldir_21 sh -c "rm -rf \"deldir_21\" 2>>$sd/adzw_2_errtemp.txt";
 sleep 3s;
 $awk_2 -v FS='\n' -v ORS='\0' '{print $0}' $sd/adzw_2.txt|$xargs_2 -0 -P 80 -I deldir_21 sh -c "rm -r \"deldir_21\" 2>/dev/null";
 sleep 3s;
-$awk_2 -F "'" '{print $3}' $sd/adzw_2_errtemp.txt|sed -e '/\/data\/media\/0/ d' -e '/\/data\/user_de\/0\/com.android.systemui/ d' -e '/\/data\/user_de\/0\/com.miui.home/ d' -e '/\/sbin\/.magisk\/mirror\/data\/media\/0/ d' -e '/\/sbin\/.magisk\/mirror\/data\/user_de\/0\/com.android.systemui/ d' -e '/\/sbin\/.magisk\/mirror\/data\/user_de\/0\/com.miui.home/ d'|$xargs_2 -P 80 -I deldir_22 sh -c "chattr -R -i \"deldir_22\" >/dev/null 2>&1;rm -rf \"deldir_22\" 2>>$sd/adzw_2_err.txt";} &
+$awk_2 -F "'" '{print $3}' $sd/adzw_2_errtemp.txt|sed -e '/\/data\/media\/0/ d' -e '/\/data\/user_de\/0\/com.android.systemui/ d' -e '/\/data\/user_de\/0\/com.miui.home/ d' -e '/\/sbin\/.magisk\/mirror\/data\/media\/0/ d' -e '/\/sbin\/.magisk\/mirror\/data\/user_de\/0\/com.android.systemui/ d' -e '/\/sbin\/.magisk\/mirror\/data\/user_de\/0\/com.miui.home/ d' -e '/\/dev\/*\/.magisk\/mirror\/data\/media\/0/ d' -e '/\/dev\/*\/.magisk\/mirror\/data\/user_de\/0\/com.android.systemui/ d' -e '/\/dev\/*\/.magisk\/mirror\/data\/user_de\/0\/com.miui.home/ d'|$xargs_2 -P 80 -I deldir_22 sh -c "chattr -R -i \"deldir_22\" >/dev/null 2>&1;rm -rf \"deldir_22\" 2>>$sd/adzw_2_err.txt";} &
 sleep 3s
 
 echo "   开始在sd卡中搜索文件夹，稍等..."
@@ -1845,6 +1927,7 @@ echo "   开始在sd卡中搜索文件夹，稍等..."
  -iname "*story" -o\
  -iname ".trashBin" -o\
  -iname ".wx" -o\
+ -iname ".yz" -o\
  -iname "backup" -o\
  -iname "backups" -o\
  -iname "mta*" -o\
@@ -1866,11 +1949,11 @@ echo "   开始从根目录起搜索文件，稍等..."
  -iname "*_log*.txt" -o\
  -iname "*error" -o\
  -iname "*log" -o\
- -iname "*logs" -o\
  -iname "*log.lock" -o\
  -iname "*log.txt" -o\
- -iname "*log{0..9}.txt" -o\
+ -iname "*log[0-9].txt" -o\
  -iname "*logs" -o\
+ -iname "*logs*.txt" -o\
  -iname "log_*.txt" -o\
  -iname "logs_*.txt" -o\
  -iname "Thumbs.db" -o\
@@ -1882,24 +1965,23 @@ $awk_2 -v FS='\n' -v ORS='\0' '{print $0}' $sd/adzw_4.txt|$xargs_2 -0 -P 80 -I d
 sleep 5s
 
 echo "   开始在data中搜索文件，稍等..."
-{ find /data -type f \( -iname "*cache*" -o\
- -iname "*_history" -o\
- -iname "*_ready.statistic" -o\
- -iname "*_list.txt" -o\
- -iname "*.bak" -o\
+{ find /data -type f \( -iname "*.0" -o\
  -iname "*.backup" -o\
  -iname "*.backups" -o\
+ -iname "*.bak" -o\
  -iname "*.tlog" -o\
  -iname "*.trace" -o\
+ -iname "*_history" -o\
+ -iname "*_list.txt" -o\
+ -iname "*_ready.statistic" -o\
+ -iname "*cache*" -o\
  -iname "*info.txt" -o\
- -iname "*log" -o\
- -iname "*logs" -o\
  -iname "*test_writable" -o\
  -iname "._.Trashes" -o\
  -iname ".common" -o\
- -iname ".spotlight*" -o\
  -iname ".DS_Store" -o\
  -iname ".fseventsd" -o\
+ -iname ".spotlight*" -o\
  -iname ".tim" -o\
  -iname "alsn.db" -o\
  -iname "external.db-shm" -o\
@@ -1907,12 +1989,13 @@ echo "   开始在data中搜索文件，稍等..."
  -iname "mistat.db-shm" -o\
  -iname "mistat.db-wal" -o\
  -iname "state-*.bin.bak" -o\
+ -iname "tlog_v[0-9]" -o\
  -iname "variations_seed_new" \) 2>/dev/null|sed -e '/\/Books\/Soushu/ d' -e '/\/com.tencent.tmgp.sgame/ d' -e '/\/lib\// d' -e '/\/lib64\// d' -e '/.so/ d' >>$sd/adzw_5.txt;
 $awk_2 -v FS='\n' -v ORS='\0' '{print $0}' $sd/adzw_5.txt|$xargs_2 -0 -P 80 -I delfile_51 sh -c "rm -rf \"delfile_51\" 2>>$sd/adzw_5_errtemp.txt";
 sleep 3s;
 $awk_2 -v FS='\n' -v ORS='\0' '{print $0}' $sd/adzw_5.txt|$xargs_2 -0 -P 80 -I delfile_51 sh -c "rm -r \"delfile_51\" 2>/dev/null";
 sleep 3s;
-$awk_2 -F "'" '{print $3}' $sd/adzw_5_errtemp.txt|sed -e '/\/data\/media\/0/ d' -e '/\/data\/user_de\/0\/com.android.systemui/ d' -e '/\/data\/user_de\/0\/com.miui.home/ d' -e '/\/sbin\/.magisk\/mirror\/data\/media\/0/ d' -e '/\/sbin\/.magisk\/mirror\/data\/user_de\/0\/com.android.systemui/ d' -e '/\/sbin\/.magisk\/mirror\/data\/user_de\/0\/com.miui.home/ d'|$xargs_2 -P 80 -I delfile_52 sh -c "chattr -R -i \"delfile_52\" >/dev/null 2>&1;rm -rf \"delfile_52\" 2>>$sd/adzw_5_err.txt";} &
+$awk_2 -F "'" '{print $3}' $sd/adzw_5_errtemp.txt|sed -e '/\/data\/media\/0/ d' -e '/\/data\/user_de\/0\/com.android.systemui/ d' -e '/\/data\/user_de\/0\/com.miui.home/ d' -e '/\/sbin\/.magisk\/mirror\/data\/media\/0/ d' -e '/\/sbin\/.magisk\/mirror\/data\/user_de\/0\/com.android.systemui/ d' -e '/\/sbin\/.magisk\/mirror\/data\/user_de\/0\/com.miui.home/ d' -e '/\/dev\/*\/.magisk\/mirror\/data\/media\/0/ d' -e '/\/dev\/*\/.magisk\/mirror\/data\/user_de\/0\/com.android.systemui/ d' -e '/\/dev\/*\/.magisk\/mirror\/data\/user_de\/0\/com.miui.home/ d'|$xargs_2 -P 80 -I delfile_52 sh -c "chattr -R -i \"delfile_52\" >/dev/null 2>&1;rm -rf \"delfile_52\" 2>>$sd/adzw_5_err.txt";} &
 sleep 3s;
 { for adzw_53 in `find /data -type d \( -iname "*_databases" -o -iname "databases" -o -iname "files" -o -iname "shared_prefs" -o -iname "system" \) 2>/dev/null|sed -e '/com.android.deskclock/ d'`;
 do
@@ -1925,16 +2008,28 @@ echo "   开始在sd卡中搜索文件，稍等..."
  -iname "*.chunk.css" -o\
  -iname "*.chunk.js" -o\
  -iname "*.kpg" -o\
+ -iname ".ptcs.db" -o\
  -iname "._*" -o\
+ -iname ".DataId" -o\
+ -iname ".DCIM_ID" -o\
  -iname ".mid.txt" -o\
  -iname ".mn*" -o\
  -iname ".qqq" -o\
  -iname ".sss" -o\
  -iname "lcfp" -o\
- -iname "lcfp.lock" \) 2>/dev/null >>$sd/adzw_6.txt;
+ -iname "lcfp.lock" -o\
+ -iname "Screenshot_*_com.taobao.taobao_compv2" \) 2>/dev/null >>$sd/adzw_6.txt;
 $awk_2 -v FS='\n' -v ORS='\0' '{print $0}' $sd/adzw_6.txt|$xargs_2 -0 -P 80 -I delfile_61 sh -c "rm -rf \"delfile_61\" 2>>$sd/adzw_6_err.txt";
 sleep 3s;
 $awk_2 -v FS='\n' -v ORS='\0' '{print $0}' $sd/adzw_6.txt|$xargs_2 -0 -P 80 -I delfile_61 sh -c "rm -r \"delfile_61\" 2>/dev/null";} &
+
+if [[ -n $(/system/bin/pm list packages | grep com.miui.analytics) ]]
+then
+  /system/bin/pm uninstall com.miui.analytics &>/dev/null
+  [[ $? == "0" ]] && echo "   *已卸载 com.miui.analytics" || echo "   * com.miui.analytics卸载失败"
+else
+  echo "   *无 com.miui.analytics"
+fi
 
 echo "   开始进行QQ的JPG、MP4清理，稍等..."
 $find_2 $sd/[Tt]encent/QQLite -type f \( -iname "*.jpg" -o -iname "*.mp4" \) -print0 2>/dev/null | $xargs_2 -0 -P 80 rm -rf &>/dev/null &
@@ -1946,6 +2041,7 @@ echo "   开始进行微信的JPG、MP4清理，稍等..."
 $find_2 $sd/[Tt]encent/MicroMsg -type f \( -iname "*.jpg" -o -iname "*.mp4" \) -print0 2>/dev/null | $xargs_2 -0 -P 80 rm -rf &>/dev/null &
 $find_2 /data/data/com.tencent.mm/MicroMsg -type f \( -iname "*.jpg" -o -iname "*.mp4" \) -print0 2>/dev/null | $xargs_2 -0 -P 80 rm -rf &>/dev/null &
 $find_2 $sd/Android/data/com.tencent.mm/MicroMsg -type f \( -iname "*.jpg" -o -iname "*.mp4" \) -print0 2>/dev/null | $xargs_2 -0 -P 80 rm -rf &>/dev/null &
+$find_2 $sd/Android/data/com.tencent.mm/MicroMsg -type f -iname "*.amr" \( -atime +20 -o -mtime +20 \) -print0 2>/dev/null | $xargs_2 -0 -P 80 rm -rf &>/dev/null &
 
 echo "   开始进行MIUI的JPG、PNG清理，稍等..."
 $find_2 $sd/MIUI \( -atime +5 -o -mtime +5 \) -type f \( -iname "*.png" -o -iname "*.jpg" \) -print0 2>/dev/null |sed -e '/\/MIUI\/theme\/.data/ d' | $xargs_2 -0 -P 80 rm -rf &>/dev/null &
@@ -1973,37 +2069,31 @@ do
   done;} &
 done
 
-rm -rf /data/crashdata/* &>/dev/null
-rm -rf /data/dalvik-cache/* &>/dev/null
-rm -rf /data/tombstones/* &>/dev/null
-rm -rf /data/local/* &>/dev/null   # 系统跟踪记录
-rm -rf /data/system/dropbox/* &>/dev/null   # DropBox的日志
-rm -rf /data/system/package_cache/* &>/dev/null
-rm -rf /data/system/procstats/* &>/dev/null   # 进程统计
-rm -rf /data/system/usagestats/* &>/dev/null   # App启动统计信息
-rm -rf /data/system_ce/0/recent_images/* &>/dev/null
-rm -rf /data/system_ce/0/recent_tasks/* &>/dev/null  # "最近任务"缓存
-rm -rf /data/system_ce/0/snapshots/* &>/dev/null
-rm -rf /dev/fscklogs/* &>/dev/null  # 应用程序崩溃、内核日志记录等
-rm -rf /idd/crashdata/* &>/dev/null
-rm -rf /sys/kernel/debug/* &>/dev/null
-rm -rf /proc/sys/debug/* &>/dev/null
-sleep 3s
-rm -r /data/crashdata/* &>/dev/null
-rm -r /data/dalvik-cache/* &>/dev/null
-rm -r /data/tombstones/* &>/dev/null
-rm -r /data/local/* &>/dev/null   # 系统跟踪记录
-rm -r /data/system/dropbox/* &>/dev/null   # DropBox的日志
-rm -r /data/system/package_cache/* &>/dev/null
-rm -r /data/system/procstats/* &>/dev/null   # 进程统计
-rm -r /data/system/usagestats/* &>/dev/null   # App启动统计信息
-rm -r /data/system_ce/0/recent_images/* &>/dev/null
-rm -r /data/system_ce/0/recent_tasks/* &>/dev/null  # "最近任务"缓存
-rm -r /data/system_ce/0/snapshots/* &>/dev/null
-rm -r /dev/fscklogs/* &>/dev/null  # 应用程序崩溃、内核日志记录等
-rm -r /idd/crashdata/* &>/dev/null
-rm -r /sys/kernel/debug/* &>/dev/null
-rm -r /proc/sys/debug/* &>/dev/null
+for num_temp in {1..2}
+do
+  rm -rf /data/anr/* &>/dev/null
+  rm -rf /data/backup/pending/* &>/dev/null
+  rm -rf /data/crashdata/* &>/dev/null
+  rm -rf /data/tombstones/* &>/dev/null
+  rm -rf /dev/fscklogs/* &>/dev/null
+  rm -rf /idd/crashdata/* &>/dev/null
+  rm -rf /data/dalvik-cache/* &>/dev/null
+  rm -rf /data/local/* &>/dev/null
+  rm -rf /data/system/dropbox/* &>/dev/null
+  rm -rf /data/system/package_cache/* &>/dev/null
+  rm -rf /data/system/procstats/* &>/dev/null
+  rm -rf /data/system/usagestats/* &>/dev/null
+  rm -rf /data/system/syncmanager-log/* &>/dev/null
+  rm -rf /data/system_ce/0/recent_images/* &>/dev/null
+  rm -rf /data/system_ce/0/recent_tasks/* &>/dev/null
+  rm -rf /data/system_ce/0/snapshots/* &>/dev/null
+  rm -rf /sys/kernel/debug/* &>/dev/null
+  rm -rf /proc/sys/debug/* &>/dev/null
+  rm -rf /data/system/batterystats.bin &>/dev/null
+  rm -rf /data/system/batterystats-checkin.bin &>/dev/null
+  rm -rf /data/data/com.sohu.inputmethod.sogou/databases/sogou_push &>/dev/null
+  sleep 3s
+done
 
 $find_2 /data/misc/profiles -type f -iname "primary.prof" 2>/dev/null | $xargs_2 -P 80 -I delfile_81 sh -c "echo \"\">delfile_81"
 $find_2 /data \( -iname "*cache*" -o -iname "*.log" -o -iname "*.logs" \) -print0 | sed -e '/.auth_cache/ d' -e '/yttrium_code_cache/ d' -e '/\/lib\// d' -e '/\/lib64\// d' -e '/.so/ d' | $xargs_2 -0 -P 80 -n 20 rm -rf &>/dev/null;
@@ -2082,6 +2172,11 @@ done
 [[ ! -f $sd/adzw_6.txt ]] && num_6=0 || let num_6="`wc -l $sd/adzw_6.txt|$awk_2 '{print $1}'` - num_6_err"
 [[ ! -f $sd/adzw_7.txt ]] && num_7=0 || num_7="`wc -l $sd/adzw_7.txt|$awk_2 '{print $1}'`"
 [[ ! -f $sd/adzw_8.txt ]] && num_8=0 || num_8="`wc -l $sd/adzw_8.txt|$awk_2 '{print $1}'`"
+echo "   第2次回收文件系统未使用的空间ing..."
+$fstrim_2 -v / &>/dev/null
+/system/bin/ls -l / |grep ^d|$awk_2 '{print $8}'|$xargs_2 -I fstrim_temp $fstrim_2 -v /fstrim_temp &>/dev/null
+wait
+sm fstrim 2>/dev/null
 end_used_allsys=`df /apex /cache /cust /data /dev /metadata /mnt /sys /system /vendor 2>/dev/null|$awk_2 'NR!=1 {used+=$3}END{used=used/1024;print used}' 2>/dev/null`
 end_used_data=`du -smL /data/ 2>/dev/null|$awk_2 '{print $1}' 2>/dev/null`
 end_used_sd=`du -smL $sd/ 2>/dev/null|$awk_2 '{print $1}' 2>/dev/null`
@@ -2140,23 +2235,23 @@ cat $sd/adzw_ad.txt >>$sd/FileClear_zw_$nowtime.txt
 reboot_call_miuicleanmaster(){
 if [[ `getprop ro.product.brand` = "Xiaomi" && -n `find /data/app -type d -iname "com.topjohnwu.magisk*"` ]]
 then
-  echo -e "\033[32m \033[1m  清理脚本运行完毕！！！15秒后自动重启手机 ！！\033[0m"
+  echo -e "\033[32m \033[1m  清理脚本运行完毕！！！25秒后自动重启手机 ！！\033[0m"
   echo -e "\033[32m \033[1m  重启后将调用MIUI官方清理APP，请手动清理  ！！\033[0m"
   echo ""
   [[ ! -d /data/adb/service.d ]] && mkdir -p /data/adb/service.d
   echo "#!/system/bin/sh">/data/adb/service.d/call_miuicleanmaster-for-zw_fileclear.sh
   echo "# 这是FileClear for ZW(APP和垃圾清理模块)创建的一次性Shell脚本文件，旨在重启后通过面具APP启动MIUI Cleanmaster">>/data/adb/service.d/call_miuicleanmaster-for-zw_fileclear.sh
-  echo "sleep 20s">>/data/adb/service.d/call_miuicleanmaster-for-zw_fileclear.sh
+  echo "sleep 25s">>/data/adb/service.d/call_miuicleanmaster-for-zw_fileclear.sh
   echo "sh -c \"am start -a miui.intent.action.GARBAGE_CLEANUP -p com.miui.cleanmaster\"">>/data/adb/service.d/call_miuicleanmaster-for-zw_fileclear.sh
   echo "rm -rf \$0">>/data/adb/service.d/call_miuicleanmaster-for-zw_fileclear.sh
   chmod 777 /data/adb/service.d/call_miuicleanmaster-for-zw_fileclear.sh
-  sleep 15s
+  sleep 25s
   rm -rf $sd/adzw* &>/dev/null
   reboot
 else
-  echo -e "\033[32m \033[1m  清理脚本运行完毕！！！15秒后自动重启手机 ！！\033[0m"
+  echo -e "\033[32m \033[1m  清理脚本运行完毕！！！25秒后自动重启手机 ！！\033[0m"
   echo ""
-  sleep 15s
+  sleep 25s
   rm -rf $sd/adzw* &>/dev/null
   reboot
 fi

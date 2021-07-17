@@ -3,7 +3,8 @@ MODDIR=${0%/*}
 sd=/data/media/0
 
 # 卸载Crontabs服务
-mount|grep "ro,"|grep -v "/sbin/.magisk/"|gawk -F'[ ,]' '{print $1,$3}'|while read a b
+magisk_path=$(magisk --path)/.magisk
+mount|grep "ro,"|grep -v "$magisk_path/"|awk -F'[ ,]' '{print $1,$3}'|while read a b
 do
 mount -o rw,remount $a $b &>/dev/null
 done

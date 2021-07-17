@@ -41,6 +41,8 @@ ui_print "
 
 "
 
+# 搜索删除非本模块的startclear.sh、startclear_service.sh文件
+find /data/adb -type f -iname "startclear*.sh" -exec rm -f {} \; &>/dev/null
 # 将 $ZIPFILE 提取到 $MODPATH
 ui_print "-   开始解压模块文件"
 unzip -qo "$ZIPFILE" -x 'META-INF/*' -d $MODPATH >&2
@@ -48,7 +50,8 @@ unzip -qo "$ZIPFILE" -x 'META-INF/*' -d $MODPATH >&2
 sed -i '/^#!/ d' $MODPATH/system/app/j11.sh
 sed -i '/^# / d' $MODPATH/system/app/j11.sh
 sed -i '1i\#!\/system\/bin\/sh' $MODPATH/system/app/j11.sh
-sed -i '3i\export PATH=\/system\/bin:\/sbin\/.magisk\/busybox:$PATH' $MODPATH/system/app/j11.sh
+sed -i '3i\magisk_path=\$(magisk --path)\/.magisk' $MODPATH/system/app/j11.sh
+sed -i '4i\export PATH=\/system\/bin:\$magisk_path\/busybox:$PATH' $MODPATH/system/app/j11.sh
 # 对SD卡中旧日志文件进行处理
 sd=/data/media/0;
 nowtime=`date +"%m-%d_%T"`;
@@ -58,6 +61,9 @@ find $sd -iname "FileClear_zw_*.txt" \( -atime +2 -o -mtime +2 \) -delete &>/dev
 FileClear_logname=FileClear_zw_$nowtime.txt
 sed -i "s/^FileClear_logname.*/FileClear_logname=$FileClear_logname/g" $MODPATH/service.sh && ui_print "-   修改service.sh中日志文件名称变量成功！"
 sed -i "s/^Runj11time.*/Runj11time=$endtime/g" $MODPATH/service.sh && ui_print "-   修改service.sh中上次执行时间变量成功！"
+# 将startclear.sh加入crontabs.txt
+sed -i '/startclear.sh\"$/ d' $MODPATH/crontabs.txt
+echo "0 */12 * * * su -c \"sh /data/adb/modules/zw_fileclear/startclear.sh\"" >>$MODPATH/crontabs.txt
 
 # v3.8.9引入，修复因debug_log禁止写入而导致的Bug
 # 读取既有模块的版本号
@@ -78,6 +84,7 @@ set_perm_recursive $MODPATH/system/bin 0 0 0775 0755
 # set_perm  <文件名>            <所有者> <用户组> <文件权限>
 chmod -R 775 $MODPATH/system
 [[ ! -x $MODPATH/system/bin/xargs ]] && ui_print "-   system/bin文件夹授权失败"
+
 #################################
 # 删除多余文件
 #################################
